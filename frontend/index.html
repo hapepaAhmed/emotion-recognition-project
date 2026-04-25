@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Model</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial;
+            margin-top: 100px;
+        }
+
+        button {
+            padding: 20px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Select Emotion Model</h1>
+
+    <button onclick="selectModel('cnn')">CNN</button>
+    <button onclick="selectModel('mobilenet')">MobileNet</button>
+    <button onclick="selectModel('efficientnet')">EfficientNet</button>
+
+    <script>
+        async function selectModel(model) {
+        
+            // 1. send model to backend
+            await fetch("http://127.0.0.1:5000/select_model", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ model: model })
+            });
+        
+            // 2. store locally (optional but useful)
+            localStorage.setItem("model", model);
+        
+            // 3. go to stream page
+            window.location.href = "stream.html";
+        }
+    </script>
+    
+</body>
+</html>
