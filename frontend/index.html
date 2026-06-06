@@ -1,50 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Select Model</title>
-    <style>
-        body {
-            text-align: center;
-            font-family: Arial;
-            margin-top: 100px;
-        }
-
-        button {
-            padding: 20px;
-            margin: 10px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Recognition - Select Model</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-    <h1>Select Emotion Model</h1>
-
-    <button onclick="selectModel('cnn')">CNN</button>
-    <button onclick="selectModel('mobilenet')">MobileNet</button>
-    <button onclick="selectModel('efficientnet')">EfficientNet</button>
+    <div class="container">
+        <h1>Emotion AI</h1>
+        <p style="margin-bottom: 2rem; color: #94a3b8; font-size: 1.1rem;">Select a neural network architecture to begin real-time analysis</p>
+        
+        <div class="btn-group">
+            <button onclick="selectModel('cnn')">Custom CNN</button>
+            <button onclick="selectModel('mobilenet')">MobileNet V2</button>
+            <button onclick="selectModel('efficientnet')">EfficientNet B0</button>
+        </div>
+    </div>
 
     <script>
         async function selectModel(model) {
-        
             // 1. send model to backend
-            await fetch("http://127.0.0.1:5000/select_model", {
+            const response = await fetch("http://127.0.0.1:5000/select_model", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ model: model })
             });
-        
-            // 2. store locally (optional but useful)
-            localStorage.setItem("model", model);
-        
-            // 3. go to stream page
-            window.location.href = "stream.html";
+
+            if(response.ok) {
+                // 2. store locally
+                localStorage.setItem("model", model);
+            
+                // 3. go to stream page
+                window.location.href = "stream.html";
+            } else {
+                alert("Error loading model. Make sure the backend is running.");
+            }
         }
     </script>
-    
 </body>
 </html>

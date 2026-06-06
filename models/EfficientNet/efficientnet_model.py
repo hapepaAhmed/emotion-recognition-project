@@ -9,9 +9,9 @@ class EfficientNetModel(nn.Module):
         self.model = efficientnet_b0(weights=EfficientNet_B0_Weights.DEFAULT)
 
         # Freeze early layers (NOT all)
-        for param in self.model.features[:-2].parameters():
+        for param in self.model.features[:-4].parameters():
             param.requires_grad = False
-        for param in self.model.features[-2:].parameters():
+        for param in self.model.features[-4:].parameters():
             param.requires_grad = True
         # Improved classifier head (better for FER dataset)
         in_features = self.model.classifier[1].in_features

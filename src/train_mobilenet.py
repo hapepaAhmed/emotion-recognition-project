@@ -12,7 +12,7 @@ print("Device:", device)
 
 
 # Data
-train_loader, val_loader, test_loader = get_dataloaders(
+train_loader, val_loader, classes = get_dataloaders(
        train_dir="dataset/fer2013/train",
        test_dir="dataset/fer2013/test",
 )

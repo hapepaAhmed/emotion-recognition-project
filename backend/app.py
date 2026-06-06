@@ -10,8 +10,24 @@ from models.MobileNet.mobilenet_model import MobileNetModel
 from models.EfficientNet.efficientnet_model import EfficientNetModel
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
+@app.route('/stream.html')
+def stream_page():
+    return app.send_static_file('stream.html')
+
+@app.route('/style.css')
+def style():
+    return app.send_static_file('style.css')
+
+@app.route('/script.js')
+def script():
+    return app.send_static_file('script.js')
 
 # ---------------- DEVICE ----------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

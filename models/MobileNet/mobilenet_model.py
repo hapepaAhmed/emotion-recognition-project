@@ -10,9 +10,9 @@ class MobileNetModel(nn.Module):
         self.model = mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
 
         # Freeze early layers (keep feature extractor stable)
-        for param in self.model.features[:-2].parameters():
+        for param in self.model.features[:-6].parameters():
             param.requires_grad = False
-        for param in self.model.features[-2:].parameters():
+        for param in self.model.features[-6:].parameters():
             param.requires_grad = True
 
         # Improved classifier head (VERY IMPORTANT for FER)

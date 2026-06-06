@@ -8,7 +8,7 @@ from models.EfficientNet.efficientnet_model import EfficientNetModel
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device:", device)
 
-train_loader, val_loader, test_loader = get_dataloaders(
+train_loader, val_loader, classes = get_dataloaders(
     train_dir="dataset/fer2013/train",
     test_dir="dataset/fer2013/test",
     batch_size=32
