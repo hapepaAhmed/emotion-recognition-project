@@ -3,7 +3,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
 
-def get_dataloaders(train_dir, test_dir, batch_size=32):
+def get_dataloaders(train_dir, test_dir, batch_size=64):
     """
     Returns train and test dataloaders
     """
@@ -16,11 +16,13 @@ def get_dataloaders(train_dir, test_dir, batch_size=32):
     train_transform = transforms.Compose([
         transforms.Resize((96, 96)),
         transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(10),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        transforms.RandomRotation(15),
+        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1),
         transforms.Grayscale(num_output_channels=3),  # FER is grayscale → convert to 3 channels
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+        transforms.RandomErasing(p=0.1)
     ])
 
     # Transforms for testing/validation (no augmentation)
@@ -37,18 +39,18 @@ def get_dataloaders(train_dir, test_dir, batch_size=32):
 
     # Dataloaders
     train_loader = DataLoader(
-    train_dataset,
-    batch_size=batch_size,
-    shuffle=True,
-    num_workers=2,
-    pin_memory=True
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=4,
+        pin_memory=True
     )
 
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=2,
+        num_workers=4,
         pin_memory=True
     )
 

@@ -5,8 +5,13 @@ from src.dataset import get_dataloaders
 from models.EfficientNet.efficientnet_model import EfficientNetModel
 
 
+import torch.backends.cudnn as cudnn
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device:", device)
+
+if device.type == 'cuda':
+    cudnn.benchmark = True
 
 train_loader, val_loader, classes = get_dataloaders(
     train_dir="dataset/fer2013/train",
@@ -16,15 +21,18 @@ train_loader, val_loader, classes = get_dataloaders(
 
 model = EfficientNetModel().to(device)
 
-criterion = nn.CrossEntropyLoss()
+# Loss (with Class Weights for imbalance)
+class_weights = torch.tensor([1.0, 1.5, 2.0]).to(device)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
 
-# Lower LR = better for pretrained EfficientNet
-optimizer = optim.Adam(model.parameters(), lr=5e-5)
+# Lower LR = better for pretrained EfficientNet, add weight decay
+optimizer = optim.Adam(model.parameters(), lr=5e-5, weight_decay=1e-4)
 
 # LR scheduler (VERY IMPORTANT)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.5)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=2)
 
 epochs = 15
+best_val_acc = 0.0
 
 for epoch in range(epochs):
 
@@ -72,12 +80,15 @@ for epoch in range(epochs):
 
     val_acc = 100 * val_correct / val_total
 
-    scheduler.step()
+    scheduler.step(val_acc)
 
     print(f"Epoch [{epoch+1}/{epochs}] "
           f"Loss: {running_loss:.4f} "
           f"Train Acc: {train_acc:.2f}% "
           f"Val Acc: {val_acc:.2f}%")
 
-# Save model
-torch.save(model.state_dict(), "models/EfficientNet/efficientnet_model.pth")
+    # Save best model
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        torch.save(model.state_dict(), "models/EfficientNet/efficientnet_model.pth")
+        print(f"--> Saved new best EfficientNet with Val Acc: {best_val_acc:.2f}%")
