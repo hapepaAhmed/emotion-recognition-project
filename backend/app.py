@@ -3,6 +3,7 @@ from flask_cors import CORS
 import torch
 import numpy as np
 import cv2
+import os
 from torchvision import transforms
 
 from models.cnn.cnn_model import CNN
@@ -50,6 +51,7 @@ transform = transforms.Compose([
 # ---------------- GLOBAL VARIABLES ----------------
 model = None
 current_model_name = None
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 
 # ---------------- LOAD MODEL ----------------
@@ -109,10 +111,27 @@ def predict():
     img = np.frombuffer(file.read(), np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_COLOR)
 
-    img = transform(img).unsqueeze(0).to(device)
+    # Convert BGR to RGB so ToPILImage reads it correctly
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
+    # Convert to grayscale for face detection
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Detect face
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
+    
+    if len(faces) == 0:
+        return jsonify({"error": "No face detected"})
+        
+    # Crop the first face found
+    x, y, w, h = faces[0]
+    face_img = img_rgb[y:y+h, x:x+w]
+
+    # Transform the cropped face
+    face_tensor = transform(face_img).unsqueeze(0).to(device)
 
     with torch.no_grad():
-        outputs = model(img)
+        outputs = model(face_tensor)
         _, pred = torch.max(outputs, 1)
 
     return jsonify({

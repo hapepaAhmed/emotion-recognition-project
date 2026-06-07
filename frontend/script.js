@@ -23,7 +23,7 @@ async function startCamera() {
         console.log("Camera started successfully");
 
         // start prediction loop AFTER camera is ready
-        setInterval(sendFrame, 1000);
+        sendFrame();
 
     } catch (error) {
         console.error("Camera access error:", error);
@@ -48,17 +48,26 @@ async function sendFrame() {
         const formData = new FormData();
         formData.append("image", blob);
 
-        const response = await fetch("http://127.0.0.1:5000/predict", {
-            method: "POST",
-            body: formData
-        });
+        try {
+            const response = await fetch("http://127.0.0.1:5000/predict", {
+                method: "POST",
+                body: formData
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (data.emotion) {
-            result.innerText = 
-                `Emotion: ${data.emotion} | Model: ${data.model}`;
+            if (data.emotion) {
+                result.innerText = 
+                    `Emotion: ${data.emotion} | Model: ${data.model}`;
+            } else if (data.error) {
+                result.innerText = `Status: ${data.error}`;
+            }
+        } catch (err) {
+            console.error("Prediction error:", err);
         }
+
+        // Wait 300ms before sending the next frame to prevent lag
+        setTimeout(sendFrame, 300);
 
     }, "image/jpeg");
 }
