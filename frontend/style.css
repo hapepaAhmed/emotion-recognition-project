@@ -108,6 +108,7 @@ video,
     object-fit: cover;
     border-radius: 14px;
     display: block;
+    transform: scaleX(-1);   /* remove mirror effect */
 }
 
 /* ===========================
