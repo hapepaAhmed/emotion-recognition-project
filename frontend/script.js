@@ -1,50 +1,83 @@
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const result = document.getElementById("result");
+const video      = document.getElementById("video");
+const canvas     = document.getElementById("canvas");
+const snapshot   = document.getElementById("snapshot");
+const result     = document.getElementById("result");
+const captureBtn = document.getElementById("capture-btn");
+const restartBtn = document.getElementById("restart-btn");
+const overlay    = document.getElementById("predicting-overlay");
+const modelLabel = document.getElementById("model-label");
 
-const model = localStorage.getItem("model");
+const modelName  = localStorage.getItem("model") || "unknown";
 
-// show selected model (optional UI improvement)
-console.log("Using model:", model);
+// Show which model is active
+const modelDisplayNames = {
+    cnn: "Custom CNN",
+    mobilenet: "MobileNet V2",
+    efficientnet: "EfficientNet B0"
+};
+modelLabel.textContent = `Model: ${modelDisplayNames[modelName] || modelName}`;
+
+let currentStream = null;
 
 // ---------------- START CAMERA ----------------
 async function startCamera() {
+    // Reset UI to "live" state
+    result.style.display    = "none";
+    restartBtn.style.display = "none";
+    snapshot.style.display  = "none";
+    video.style.display     = "block";
+    captureBtn.style.display = "none";  // show only once camera is ready
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: { facingMode: "user" },
             audio: false
         });
 
+        currentStream = stream;
         video.srcObject = stream;
-
-        // IMPORTANT for some browsers
         await video.play();
 
-        console.log("Camera started successfully");
-
-        // start prediction loop AFTER camera is ready
-        sendFrame();
+        // Show capture button once camera is live
+        captureBtn.style.display = "inline-flex";
 
     } catch (error) {
         console.error("Camera access error:", error);
-        alert("Camera blocked or not allowed. Please enable permission.");
+        modelLabel.textContent = "⚠ Camera blocked. Please enable permission.";
     }
 }
 
+// ---------------- STOP CAMERA ----------------
+function stopCamera() {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+    }
+    video.srcObject = null;
+}
 
-
-// ---------------- SEND FRAME ----------------
-async function sendFrame() {
-
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = video.videoWidth;
+// ---------------- CAPTURE & PREDICT ----------------
+async function captureAndPredict() {
+    // 1. Capture current frame to canvas
+    canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
-
+    const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
-    canvas.toBlob(async (blob) => {
+    // 2. Show the frozen snapshot, hide live video
+    snapshot.src = canvas.toDataURL("image/jpeg");
+    snapshot.style.display = "block";
+    video.style.display    = "none";
 
+    // 3. Stop the camera stream
+    stopCamera();
+
+    // 4. Hide capture btn, show spinner overlay
+    captureBtn.style.display = "none";
+    overlay.style.display    = "flex";
+
+    // 5. Convert canvas to blob and send to backend
+    canvas.toBlob(async (blob) => {
         const formData = new FormData();
         formData.append("image", blob);
 
@@ -56,23 +89,38 @@ async function sendFrame() {
 
             const data = await response.json();
 
+            overlay.style.display = "none";
+            result.style.display  = "block";
+
             if (data.emotion) {
-                result.innerText = 
-                    `Emotion: ${data.emotion} | Model: ${data.model}`;
+                const emoji = { Happy: "😄", Neutral: "😐", Sad: "😢" };
+                result.innerHTML =
+                    `<span class="emotion-emoji">${emoji[data.emotion] || "🤔"}</span>
+                     <span class="emotion-text">${data.emotion}</span>
+                     <span class="model-tag">${modelDisplayNames[data.model] || data.model}</span>`;
             } else if (data.error) {
-                result.innerText = `Status: ${data.error}`;
+                result.innerHTML = `<span class="emotion-text" style="color:#f87171;">⚠ ${data.error}</span>`;
             }
+
         } catch (err) {
+            overlay.style.display = "none";
+            result.style.display  = "block";
+            result.innerHTML = `<span class="emotion-text" style="color:#f87171;">⚠ Backend not reachable</span>`;
             console.error("Prediction error:", err);
         }
 
-        // Wait 300ms before sending the next frame to prevent lag
-        setTimeout(sendFrame, 300);
+        // 6. Show restart button
+        restartBtn.style.display = "inline-flex";
 
-    }, "image/jpeg");
+    }, "image/jpeg", 0.92);
 }
 
-// start immediately
+// ---------------- RESTART ----------------
+function restartCamera() {
+    startCamera();
+}
+
+// ---------------- INIT ----------------
 window.onload = () => {
     startCamera();
 };

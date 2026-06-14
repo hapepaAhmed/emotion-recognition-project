@@ -8,20 +8,42 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container stream-page">
         <h1>Live Emotion Detection</h1>
-        
+        <p id="model-label" class="subtitle">Loading model...</p>
+
         <div class="stream-container">
-            <video id="video" autoplay></video>
+            <!-- Live video feed -->
+            <video id="video" autoplay playsinline></video>
+            <!-- Shows the captured still frame -->
+            <img id="snapshot" style="display:none;" alt="Captured frame" />
+            <!-- Hidden canvas used for capturing -->
             <canvas id="canvas" style="display:none;"></canvas>
+
+            <!-- Overlay shown while predicting -->
+            <div id="predicting-overlay" class="predicting-overlay" style="display:none;">
+                <div class="spinner"></div>
+                <span>Analyzing...</span>
+            </div>
         </div>
 
-        <div id="result">Initializing...</div>
+        <!-- Result badge -->
+        <div id="result" class="result-badge" style="display:none;"></div>
 
-        <button class="back-btn" onclick="window.location.href='index.html'">← Back to Models</button>
+        <!-- Controls -->
+        <div class="controls">
+            <!-- Capture button — visible while camera is live -->
+            <button id="capture-btn" class="capture-btn" onclick="captureAndPredict()" style="display:none;">
+                📸 Capture & Predict
+            </button>
+            <!-- Start/Restart button — visible after prediction -->
+            <button id="restart-btn" class="restart-btn" onclick="restartCamera()" style="display:none;">
+                ▶ Start Again
+            </button>
+            <button class="back-btn" onclick="window.location.href='index.html'">← Back to Models</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
-
 </body>
 </html>
